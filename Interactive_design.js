@@ -1,10 +1,11 @@
 "use strict";
 import context from "../script/context.js";
-import { randomNumber } from "../script/utils.js";
+import { hsl, randomNumber } from "../script/utils.js";
 
 // Configuration constants
+const SIGNATURE_SIZE = 150; // Base size for the signature grid
 const FALLING_X_COUNT = 50; // Number of falling "X" shapes
-const FALL_SPEED = 2; // Base falling speed for the "X"
+const FALL_SPEED = 5; // Base falling speed for the "X"
 
 // Array to hold falling "X" shapes
 let fallingXs = [];
@@ -22,6 +23,23 @@ function initFallingXs() {
 				255
 			)}, ${randomNumber(0, 255)})`,
 		});
+	}
+}
+
+// Draw the "signature" grid
+function drawSignature(size) {
+	const startX = (context.canvas.width - 6 * size) / 2;
+	const startY = (context.canvas.height - 5 * size) / 2;
+
+	// Draw grid squares
+	for (let row = 0; row < 5; row++) {
+		for (let col = 0; col < 6; col++) {
+			const squareX = startX + col * size;
+			const squareY = startY + row * size;
+
+			context.fillStyle = "black"; // Default color
+			context.fillRect(squareX, squareY, size, size);
+		}
 	}
 }
 
@@ -64,7 +82,8 @@ function updateFallingXs() {
 function animate() {
 	context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-	// Draw and update elements
+	// Draw the grid and falling "X" shapes
+	drawSignature(SIGNATURE_SIZE);
 	drawFallingXs();
 	updateFallingXs();
 
