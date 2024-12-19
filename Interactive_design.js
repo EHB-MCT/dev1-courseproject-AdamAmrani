@@ -1,11 +1,12 @@
 "use strict";
 import context from "../script/context.js";
-import { hsl, randomNumber } from "../script/utils.js";
+import { randomNumber } from "../script/utils.js";
 
 // Configuration constants
 const SIGNATURE_SIZE = 150; // Base size for the signature grid
 const FALLING_X_COUNT = 50; // Number of falling "X" shapes
-const FALL_SPEED = 5; // Base falling speed for the "X"
+const FALL_SPEED = 2; // Base falling speed for the "X"
+const HOVER_SCALE = 1.5; // Scale factor for hovered squares
 
 // Array to hold falling "X" shapes
 let fallingXs = [];
@@ -27,7 +28,7 @@ function initFallingXs() {
 }
 
 // Draw the "signature" grid
-function drawSignature(size) {
+function drawSignature(size, mouseX, mouseY) {
 	const startX = (context.canvas.width - 6 * size) / 2;
 	const startY = (context.canvas.height - 5 * size) / 2;
 
@@ -37,13 +38,28 @@ function drawSignature(size) {
 			const squareX = startX + col * size;
 			const squareY = startY + row * size;
 
-			context.fillStyle = "black"; // Default color
+			// Check if mouse is hovering over the square
+			if (
+				mouseX >= squareX &&
+				mouseX <= squareX + size &&
+				mouseY >= squareY &&
+				mouseY <= squareY + size
+			) {
+				context.fillStyle = hsl(
+					randomNumber(0, 360),
+					100,
+					randomNumber(40, 70)
+				);
+			} else {
+				context.fillStyle = "black"; // Default color
+			}
+
 			context.fillRect(squareX, squareY, size, size);
 		}
 	}
 }
 
-// Draw falling "X" shapes
+// Draw the falling "X" shapes
 function drawFallingXs() {
 	fallingXs.forEach((xShape) => {
 		context.strokeStyle = xShape.color;
@@ -78,18 +94,63 @@ function updateFallingXs() {
 	});
 }
 
+// Draw the black and purple grid in the bottom-right corner
+function drawBottomRightGrid() {
+	const gridSize = 20; // Each block's size
+	const gridStartX = context.canvas.width - 5 * gridSize - 10; // Positioning from the right
+	const gridStartY = context.canvas.height - 5 * gridSize - 10; // Positioning from the bottom
+
+	const pattern = [
+		[0, 0, 0, 0, 0],
+		[0, 1, 1, 1, 0],
+		[0, 1, 0, 1, 0],
+		[0, 1, 1, 1, 0],
+		[1, 1, 1, 1, 1],
+	];
+
+	for (let row = 0; row < 5; row++) {
+		for (let col = 0; col < 5; col++) {
+			const color = pattern[row][col] === 1 ? "purple" : "black";
+			context.fillStyle = color;
+			context.fillRect(
+				gridStartX + col * gridSize,
+				gridStartY + row * gridSize,
+				gridSize,
+				gridSize
+			);
+		}
+	}
+}
+
 // Animation loop
-function animate() {
+function animate(mouseX = -1, mouseY = -1) {
 	context.clearRect(0, 0, context.canvas.width, context.canvas.height);
 
-	// Draw the grid and falling "X" shapes
-	drawSignature(SIGNATURE_SIZE);
+	// Draw and update elements
+	drawSignature(SIGNATURE_SIZE, mouseX, mouseY);
 	drawFallingXs();
 	updateFallingXs();
+	drawBottomRightGrid(); // Draw the grid in the bottom-right corner
 
-	requestAnimationFrame(animate);
+	requestAnimationFrame(() => animate(mouseX, mouseY));
 }
+
+// Mouse interaction
+context.canvas.addEventListener("mousemove", (e) => {
+	const rect = context.canvas.getBoundingClientRect();
+	const mouseX = e.clientX - rect.left;
+	const mouseY = e.clientY - rect.top;
+	animate(mouseX, mouseY);
+});
 
 // Initialize and start animation
 initFallingXs();
 animate();
+
+// Adjust canvas size on window resize
+window.addEventListener("resize", () => {
+	context.canvas.width = window.innerWidth;
+	context.canvas.height = window.innerHeight;
+	fallingXs = [];
+	initFallingXs();
+});
