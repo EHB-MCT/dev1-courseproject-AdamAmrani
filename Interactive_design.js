@@ -32,6 +32,10 @@ function drawSignature(size, mouseX, mouseY) {
 	const startX = (context.canvas.width - 6 * size) / 2;
 	const startY = (context.canvas.height - 5 * size) / 2;
 
+	// Flashing effect variables
+	const flashSpeed = 0.1; // Speed of color change
+	const time = Date.now() * flashSpeed;
+
 	// Draw grid squares
 	for (let row = 0; row < 5; row++) {
 		for (let col = 0; col < 6; col++) {
@@ -45,11 +49,12 @@ function drawSignature(size, mouseX, mouseY) {
 				mouseY >= squareY &&
 				mouseY <= squareY + size
 			) {
-				context.fillStyle = hsl(
-					randomNumber(0, 360),
-					100,
-					randomNumber(40, 70)
-				);
+				// Flashing RGB colors when hovered
+				const r = Math.sin(time + (col + row)) * 127 + 128; // Generate a red value
+				const g = Math.sin(time + (col + row) + Math.PI / 2) * 127 + 128; // Generate a green value
+				const b = Math.sin(time + (col + row) + Math.PI) * 127 + 128; // Generate a blue value
+
+				context.fillStyle = `rgb(${r}, ${g}, ${b})`;
 			} else {
 				context.fillStyle = "black"; // Default color
 			}
@@ -95,11 +100,12 @@ function updateFallingXs() {
 }
 
 // Draw the black and purple grid in the bottom-right corner
-function drawBottomRightGrid() {
+function drawBottomRightGrid(mouseX, mouseY) {
 	const gridSize = 20; // Each block's size
 	const gridStartX = context.canvas.width - 5 * gridSize - 10; // Positioning from the right
 	const gridStartY = context.canvas.height - 5 * gridSize - 10; // Positioning from the bottom
 
+	// Initial pattern (black = 0, purple = 1)
 	const pattern = [
 		[0, 0, 0, 0, 0],
 		[0, 1, 1, 1, 0],
@@ -108,16 +114,30 @@ function drawBottomRightGrid() {
 		[1, 1, 1, 1, 1],
 	];
 
+	// Draw grid and highlight hovered blocks
 	for (let row = 0; row < 5; row++) {
 		for (let col = 0; col < 5; col++) {
-			const color = pattern[row][col] === 1 ? "purple" : "black";
+			const squareX = gridStartX + col * gridSize;
+			const squareY = gridStartY + row * gridSize;
+			let color;
+
+			// Check if mouse is hovering over the block
+			const isHovered =
+				mouseX >= squareX &&
+				mouseX <= squareX + gridSize &&
+				mouseY >= squareY &&
+				mouseY <= squareY + gridSize;
+
+			if (isHovered) {
+				// Swap colors when hovered: purple becomes black, black becomes purple
+				color = pattern[row][col] === 1 ? "black" : "purple";
+			} else {
+				// Default color from the pattern
+				color = pattern[row][col] === 1 ? "purple" : "black";
+			}
+
 			context.fillStyle = color;
-			context.fillRect(
-				gridStartX + col * gridSize,
-				gridStartY + row * gridSize,
-				gridSize,
-				gridSize
-			);
+			context.fillRect(squareX, squareY, gridSize, gridSize);
 		}
 	}
 }
@@ -130,7 +150,7 @@ function animate(mouseX = -1, mouseY = -1) {
 	drawSignature(SIGNATURE_SIZE, mouseX, mouseY);
 	drawFallingXs();
 	updateFallingXs();
-	drawBottomRightGrid(); // Draw the grid in the bottom-right corner
+	drawBottomRightGrid(mouseX, mouseY); // Draw the grid in the bottom-right corner
 
 	requestAnimationFrame(() => animate(mouseX, mouseY));
 }
